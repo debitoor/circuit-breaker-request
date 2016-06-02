@@ -1,11 +1,15 @@
 var express = require('express');
+var concat = require('concat-stream');
+var pump = require('pump');
 var app = express();
 var responses = [];
-var rrs = require('../..');
+var cbr = require('../..');
 
-describe('request-retry-stream GET callbacks', function () {
+describe('circuit-breaker-request GET basics', function () {
+	var msg;
 	before(function () {
 
+		msg = JSON.stringify({err: true});
 
 		app.disable('x-powered-by');
 		app.get('/test', function (req, res, next) {
@@ -40,7 +44,7 @@ describe('request-retry-stream GET callbacks', function () {
 			res.json(e);
 		});
 
-		var server = app.listen(4303, function () {
+		var server = app.listen(4330, function () {
 			var host = server.address().address;
 			var port = server.address().port;
 			console.log('Example app listening at http://%s:%s', host, port);
@@ -52,18 +56,33 @@ describe('request-retry-stream GET callbacks', function () {
 	function get(r, callback) {
 		responses = r;
 		result = {};
-		rrs.get({
-			url: 'http://localhost:4303/test',
-			timeout: 2000,
-			json: true,
-			logFunction: console.warn
-		}, function (err, resp) {
-			result.statusCode = resp && resp.statusCode;
-			result.headers = resp && resp.headers;
-			result.body = resp && resp.body;
-			result.err = err;
-			callback();
+		var stream;
+		stream = cbr.get({
+			url: 'http://localhost:4330/test',
+			timeout: 500,
+			logFunction: console.warn,
+			passThrough: true
 		});
+		stream.on('response', function (resp) {
+			result.statusCode = resp.statusCode;
+			result.headers = resp.headers;
+		});
+		var concatStream = concat(function (body) {
+			//console.error(body.toString());
+			try {
+				result.body = JSON.parse(body.toString());
+			} catch (ex) {
+				result.body = ex;
+				result.bodyString = body.toString();
+			}
+		});
+		pump(stream, concatStream, function (err) {
+			if (err) {
+				result.err = Object.assign({stack: err.stack}, err);
+			}
+			callback && callback();
+		});
+		return {req: stream, dest: concatStream};
 	}
 
 	describe('returning success', function () {
@@ -100,50 +119,41 @@ describe('request-retry-stream GET callbacks', function () {
 	describe('returning 503, 503 and 503', function () {
 		before(done => get([{statusCode: 503, msg: 'err'}, {statusCode: 503, msg: 'err'}, {
 			statusCode: 503,
-			msg: 'err'
+			msg
 		}], done));
 
-		it('calls with err', ()=> {
+		it('should pass error through', ()=> {
 			expect(result).to.containSubset({
-				err: {
-					attemptsDone: 3,
-					body: 'err',
-					method: 'GET',
-					statusCode: 503,
-					url: 'http://localhost:4303/test'
-				}
+				body: {
+					err: true
+				},
+				statusCode: 503
 			});
 		});
 	});
 
 	describe('returning 400', function () {
-		before(done => get([{statusCode: 400, msg: 'err'}], done));
+		before(done => get([{statusCode: 400, msg}], done));
 
-		it('calls with err', ()=> {
+		it('should pass error through', ()=> {
 			expect(result).to.containSubset({
-				err: {
-					attemptsDone: 1,
-					body: 'err',
-					method: 'GET',
-					statusCode: 400,
-					url: 'http://localhost:4303/test'
-				}
+				body: {
+					err: true
+				},
+				statusCode: 400
 			});
 		});
 	});
 
 	describe('returning 503 then 400', function () {
-		before(done => get([{statusCode: 503, msg: 'err'}, {statusCode: 400, msg: 'err'}], done));
+		before(done => get([{statusCode: 503, msg: 'err'}, {statusCode: 400, msg}], done));
 
 		it('calls with err', ()=> {
 			expect(result).to.containSubset({
-				err: {
-					attemptsDone: 2,
-					body: 'err',
-					method: 'GET',
-					statusCode: 400,
-					url: 'http://localhost:4303/test'
-				}
+				body: {
+					err: true
+				},
+				statusCode: 400
 			});
 		});
 	});

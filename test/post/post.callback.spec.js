@@ -3,9 +3,9 @@ var concat = require('concat-stream');
 var pump = require('pump');
 var app = express();
 var responses = [];
-var rrs = require('../..');
+var cbr = require('../..');
 
-describe('request-retry-stream POST callbacks', function () {
+describe('circuit-breaker-request POST callbacks', function () {
 	before(function () {
 
 
@@ -60,7 +60,7 @@ describe('request-retry-stream POST callbacks', function () {
 	function post(msg, r, callback) {
 		responses = r;
 		result = {};
-		rrs.post({
+		cbr.post({
 			url: 'http://localhost:4305/test',
 			timeout: 2000,
 			json: true,

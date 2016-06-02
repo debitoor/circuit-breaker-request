@@ -3,9 +3,9 @@ var concat = require('concat-stream');
 var pump = require('pump');
 var app = express();
 var responses = [];
-var rrs = require('../..');
+var cbr = require('../..');
 
-describe('request-retry-stream DELETE callbacks', function () {
+describe('circuit-breaker-request DELETE callbacks', function () {
 	
 	before(function () {
 		app.disable('x-powered-by');
@@ -59,7 +59,7 @@ describe('request-retry-stream DELETE callbacks', function () {
 	function del(msg, r, callback) {
 		responses = r;
 		result = {};
-		rrs.del({
+		cbr.del({
 			url: 'http://localhost:4320/test',
 			timeout: 2000,
 			json: true,

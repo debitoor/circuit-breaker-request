@@ -6,11 +6,10 @@ var pump = require('pump');
 var ProxyStream = require('../ProxyStream');
 var app = express();
 var responses = [];
-var rrs = require('../..');
+var cbr = require('../..');
 
-describe('GET multifetch sync', function () {
+describe('GET multifetch', function () {
 	before(function () {
-
 		app.disable('x-powered-by');
 		app.set('etag', false);
 		app.get('/test', function (req, res, next) {
@@ -21,17 +20,28 @@ describe('GET multifetch sync', function () {
 			if (responseToSend.timeout) {
 				return null;
 			}
-			res.writeHeader(responseToSend.statusCode, {
-				'content-type': 'application/json',
-				'content-length': responseToSend.msg.length
-			});
-			res.write(responseToSend.msg);
-			res.end();
+			var buf = new Buffer(responseToSend.msg, 'utf-8');
+			setTimeout(function () {
+				res.writeHeader(responseToSend.statusCode, {
+					'content-type': 'application/json',
+					'content-length': buf.length
+				});
+				return sendByte();
+
+				function sendByte() {
+					if (!buf.length) {
+						return res.end();
+					}
+					res.write(new Buffer([buf.readUInt8(0)]));
+					buf = buf.slice(1);
+					setTimeout(sendByte, 100);
+				}
+			}, 500);
 		});
 
-		app.get('/rrs', function (req, res, next) {
-			var stream = rrs.get({
-				url: 'http://localhost:4302/test',
+		app.get('/cbr', function (req, res, next) {
+			var stream = cbr.get({
+				url: 'http://localhost:4301/test',
 				attempts: 3, //default
 				delay: 500, //default
 				timeout: 2000,
@@ -55,7 +65,7 @@ describe('GET multifetch sync', function () {
 
 		app.get('/request', function (req, res, next) {
 			var stream = request.get({
-				url: 'http://localhost:4302/test',
+				url: 'http://localhost:4301/test',
 				timeout: 2000
 			});
 			pump(stream, res, next);
@@ -71,13 +81,12 @@ describe('GET multifetch sync', function () {
 			res.json(e);
 		});
 
-		var server = app.listen(4302, function () {
+		var server = app.listen(4301, function () {
 			var host = server.address().address;
 			var port = server.address().port;
 			console.log('Example app listening at http://%s:%s', host, port);
 		});
 	});
-
 	var result;
 
 	function get(r, optionalOptions, callback) {
@@ -91,12 +100,12 @@ describe('GET multifetch sync', function () {
 		var stream;
 		if (optionalOptions.multifetch) {
 			stream = request.get({
-				url: 'http://localhost:4302/multifetch?rrs=/rrs',
+				url: 'http://localhost:4301/multifetch?cbr=/cbr',
 				timeout: 5000
 			});
 		} else {
 			stream = request.get({
-				url: 'http://localhost:4302/test',
+				url: 'http://localhost:4301/test',
 				timeout: 5000,
 				logFunction: console.warn
 			});
@@ -118,54 +127,58 @@ describe('GET multifetch sync', function () {
 	}
 
 	describe('returning success with multifetch', function () {
-		var requestResult, rrsResult;
+		var requestResult, cbrResult;
 		before(done => get([{statusCode: 200, msg: '"success"'}], {multifetch: true}, done));
-		before(()=> rrsResult = result.body.rrs);
+		before(()=> cbrResult = result.body.cbr);
 
 		before(done => get([{statusCode: 200, msg: '"success"'}], done));
 		before(()=> requestResult = result);
 
 		it('calls with success', ()=> {
-			delete rrsResult.headers.date;
+			delete cbrResult.headers.date;
+			delete cbrResult.headers.connection;
 			delete requestResult.headers.date;
-			expect(rrsResult).to.eql(requestResult);
+			delete requestResult.headers.connection;
+			expect(cbrResult).to.eql(requestResult);
 		});
 	});
 
 	describe('returning 503 then success with multifetch', function () {
 		this.timeout(6000);
-		var requestResult, rrsResult;
+		var requestResult, cbrResult;
 		before(done => get([{statusCode: 503, msg: 'err'}, {
 			statusCode: 200,
 			msg: '"success"'
 		}], {multifetch: true}, done));
-		before(()=> rrsResult = result.body.rrs);
+		before(()=> cbrResult = result.body.cbr);
 
 		before(done => get([{statusCode: 200, msg: '"success"'}], done));
 		before(()=> requestResult = result);
 
 		it('calls with success', ()=> {
-			delete rrsResult.headers.date;
+			delete cbrResult.headers.date;
+			delete cbrResult.headers.connection;
 			delete requestResult.headers.date;
-			expect(rrsResult).to.eql(requestResult);
+			delete requestResult.headers.connection;
+			expect(cbrResult).to.eql(requestResult);
 		});
 	});
 
 	describe('returning 503, 503, 503 with multifetch', function () {
 		this.timeout(6000);
-		var rrsResult;
+		var cbrResult;
 		before(done => get([{statusCode: 503, msg: 'err'}, {statusCode: 503, msg: 'err'}, {
 			statusCode: 503,
 			msg: 'err'
 		}], {multifetch: true}, done));
-		before(()=> rrsResult = result.body.rrs);
+		before(()=> cbrResult = result.body.cbr);
 
 		it('calls with success with error in body', ()=> {
-			delete rrsResult.headers.date;
-			expect(rrsResult).to.eql({
+			delete cbrResult.headers.date;
+			expect(cbrResult).to.eql({
 				body: {
 					statusCode: 503,
-					url: 'http://localhost:4302/test',
+					url: 'http://localhost:4301/test',
 					attempts: 3,
 					delay: 500,
 					timeout: 666,
@@ -188,17 +201,19 @@ describe('GET multifetch sync', function () {
 
 	describe('timeout then success with multifetch', function () {
 		this.timeout(6000);
-		var requestResult, rrsResult;
+		var requestResult, cbrResult;
 		before(done => get([{timeout: true}, {statusCode: 200, msg: '"success"'}], {multifetch: true}, done));
-		before(()=> rrsResult = result.body.rrs);
+		before(()=> cbrResult = result.body.cbr);
 
 		before(done => get([{statusCode: 200, msg: '"success"'}], done));
 		before(()=> requestResult = result);
 
 		it('calls with success', ()=> {
-			delete rrsResult.headers.date;
+			delete cbrResult.headers.date;
+			delete cbrResult.headers.connection;
 			delete requestResult.headers.date;
-			expect(rrsResult).to.eql(requestResult);
+			delete requestResult.headers.connection;
+			expect(cbrResult).to.eql(requestResult);
 		});
 	});
 });

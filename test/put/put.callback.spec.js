@@ -3,14 +3,14 @@ var concat = require('concat-stream');
 var pump = require('pump');
 var app = express();
 var responses = [];
-var rrs = require('../..');
+var cbr = require('../..');
 
-describe('request-retry-stream PATCH callbacks', function () {
+describe('circuit-breaker-request PUT callbacks', function () {
 	before(function () {
 
 
 		app.disable('x-powered-by');
-		app.patch('/test', function (req, res, next) {
+		app.put('/test', function (req, res, next) {
 			if (!responses.length) {
 				throw new Error('no responses specified for test');
 			}
@@ -48,7 +48,7 @@ describe('request-retry-stream PATCH callbacks', function () {
 			res.json(e);
 		});
 
-		var server = app.listen(4307, function () {
+		var server = app.listen(4309, function () {
 			var host = server.address().address;
 			var port = server.address().port;
 			console.log('Example app listening at http://%s:%s', host, port);
@@ -57,11 +57,11 @@ describe('request-retry-stream PATCH callbacks', function () {
 
 	var result;
 
-	function patch(msg, r, callback) {
+	function put(msg, r, callback) {
 		responses = r;
 		result = {};
-		rrs.patch({
-			url: 'http://localhost:4307/test',
+		cbr.put({
+			url: 'http://localhost:4309/test',
 			timeout: 2000,
 			json: true,
 			body: msg,
@@ -76,7 +76,7 @@ describe('request-retry-stream PATCH callbacks', function () {
 	}
 
 	describe('returning success', function () {
-		before(done => patch('success', [{statusCode: 200}], done));
+		before(done => put('success', [{statusCode: 200}], done));
 
 		it('calls with success', ()=> {
 			expect(result).to.containSubset({
@@ -88,7 +88,7 @@ describe('request-retry-stream PATCH callbacks', function () {
 	});
 
 	describe('returning 503 and then success', function () {
-		before(done => patch('success', [{statusCode: 503}, {statusCode: 200}], done));
+		before(done => put('success', [{statusCode: 503}, {statusCode: 200}], done));
 
 		it('calls with success', ()=> {
 			expect(result).to.containSubset({body: 'success', 'statusCode': 200});
@@ -96,7 +96,7 @@ describe('request-retry-stream PATCH callbacks', function () {
 	});
 
 	describe('returning 503, 503 and then success', function () {
-		before(done => patch('success', [{statusCode: 503}, {statusCode: 503}, {statusCode: 200}], done));
+		before(done => put('success', [{statusCode: 503}, {statusCode: 503}, {statusCode: 200}], done));
 
 		it('calls with success', ()=> {
 			expect(result).to.containSubset({body: 'success', 'statusCode': 200});
@@ -104,55 +104,55 @@ describe('request-retry-stream PATCH callbacks', function () {
 	});
 
 	describe('returning 503, 503 and 503', function () {
-		before(done => patch('err', [{statusCode: 503}, {statusCode: 503}, {statusCode: 503}], done));
+		before(done => put('err', [{statusCode: 503}, {statusCode: 503}, {statusCode: 503}], done));
 
 		it('calls with err', ()=> {
 			expect(result).to.containSubset({
 				err: {
 					attemptsDone: 3,
 					body: 'err',
-					method: 'PATCH',
+					method: 'PUT',
 					statusCode: 503,
-					url: 'http://localhost:4307/test'
+					url: 'http://localhost:4309/test'
 				}
 			});
 		});
 	});
 
 	describe('returning 400', function () {
-		before(done => patch('err', [{statusCode: 400}], done));
+		before(done => put('err', [{statusCode: 400}], done));
 
 		it('calls with err', ()=> {
 			expect(result).to.containSubset({
 				err: {
 					attemptsDone: 1,
 					body: 'err',
-					method: 'PATCH',
+					method: 'PUT',
 					statusCode: 400,
-					url: 'http://localhost:4307/test'
+					url: 'http://localhost:4309/test'
 				}
 			});
 		});
 	});
 
 	describe('returning 503 then 400', function () {
-		before(done => patch('err', [{statusCode: 503}, {statusCode: 400}], done));
+		before(done => put('err', [{statusCode: 503}, {statusCode: 400}], done));
 
 		it('calls with err', ()=> {
 			expect(result).to.containSubset({
 				err: {
 					attemptsDone: 2,
 					body: 'err',
-					method: 'PATCH',
+					method: 'PUT',
 					statusCode: 400,
-					url: 'http://localhost:4307/test'
+					url: 'http://localhost:4309/test'
 				}
 			});
 		});
 	});
 
 	describe('timing out then 200', function () {
-		before(done => patch('success', [{timeout: true}, {statusCode: 200}], done));
+		before(done => put('success', [{timeout: true}, {statusCode: 200}], done));
 
 		it('calls with success', ()=> {
 			expect(result).to.containSubset({body: 'success', 'statusCode': 200});

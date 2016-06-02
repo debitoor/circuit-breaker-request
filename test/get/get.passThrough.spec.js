@@ -3,9 +3,9 @@ var concat = require('concat-stream');
 var pump = require('pump');
 var app = express();
 var responses = [];
-var rrs = require('../..');
+var cbr = require('../..');
 
-describe('request-retry-stream GET basics with passThrough:true', function () {
+describe('circuit-breaker-request GET basics with passThrough:true', function () {
 	before(function () {
 
 
@@ -55,7 +55,7 @@ describe('request-retry-stream GET basics with passThrough:true', function () {
 		responses = r;
 		result = {};
 		var stream;
-		stream = rrs.get({
+		stream = cbr.get({
 			url: 'http://localhost:4300/test',
 			timeout: 500,
 			logFunction: console.warn

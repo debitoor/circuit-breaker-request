@@ -11,12 +11,6 @@ try {
 }
 
 module.exports = defaults(cnf);
-module.exports.get = defaults(cnf, 'get');
-module.exports.head = defaults(cnf, 'head');
-module.exports.post = defaults(cnf, 'post');
-module.exports.put = defaults(cnf, 'put');
-module.exports.patch = defaults(cnf, 'patch');
-module.exports.del = defaults(cnf, 'del');
 
 var circuitBreakerGroups = {};
 
@@ -42,12 +36,23 @@ function cbr() {
 
 module.exports.defaults = defaults;
 
-function defaults(defaultOpts, verb) {
-	return function () {
-		var params = request.initParams.apply(request, arguments);
-		if (verb) {
-			params.method = verb === 'del' ? 'DELETE' : verb.toUpperCase();
-		}
-		return cbr(Object.assign(Object.assign({}, defaultOpts), params), verb);
-	};
+function defaults(defaultOpts) {
+	var d = fn();
+	d.get = fn('get');
+	d.head = fn('head');
+	d.post = fn('post');
+	d.put = fn('put');
+	d.patch = fn('patch');
+	d.del = fn('del');
+	return d;
+
+	function fn(verb) {
+		return function () {
+			var params = request.initParams.apply(request, arguments);
+			if (verb) {
+				params.method = verb === 'del' ? 'DELETE' : verb.toUpperCase();
+			}
+			return cbr(Object.assign(Object.assign({}, defaultOpts), params), verb);
+		};
+	}
 }
