@@ -26,7 +26,7 @@ function cbr() {
 	params.maxFailures = params.maxFailures || 5;
 	params.resetTimeout = params.resetTimeout || 30000;
 	params.attempts = params.attempts || 3;
-	params.requestTiemout = params.requestTiemout || Math.floor(params.timeout/params.attempts);
+	params.requestTimeout = params.requestTimeout || Math.floor(params.timeout/params.attempts);
 	params.getGroupId = params.getGroupId || getGroupId;
 	var groupId = params.getGroupId(params.url || params.uri);
 	var circuitBreaker = circuitBreakerGroups[groupId];
@@ -34,7 +34,9 @@ function cbr() {
 		circuitBreaker = circuitBreakerGroups[groupId] = levee.createBreaker(rrs, params);
 	}
 	var rrsParams = Object.assign({}, params);
-	rrsParams.timeout = params.requestTiemout;
+	rrsParams.timeout = params.requestTimeout;
+	delete rrsParams.requestTimeout;
+	rrsParams.circuitBreakerTimeout = params.timeout;
 	return circuitBreaker.run(rrsParams, rrsParams.callback);
 }
 

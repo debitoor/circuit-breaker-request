@@ -8,7 +8,7 @@ var app = express();
 var responses = [];
 var rrs = require('../..');
 
-describe.only('GET multifetch sync', function () {
+describe('GET multifetch sync', function () {
 	before(function () {
 
 		app.disable('x-powered-by');
@@ -160,7 +160,7 @@ describe.only('GET multifetch sync', function () {
 		}], {multifetch: true}, done));
 		before(()=> rrsResult = result.body.rrs);
 
-		it('calls with success', ()=> {
+		it('calls with success with error in body', ()=> {
 			delete rrsResult.headers.date;
 			expect(rrsResult).to.eql({
 				body: {
@@ -168,8 +168,11 @@ describe.only('GET multifetch sync', function () {
 					url: 'http://localhost:4302/test',
 					attempts: 3,
 					delay: 500,
-					timeout: 2000,
+					timeout: 666,
 					json: true,
+					maxFailures: 5,
+					circuitBreakerTimeout: 2000,
+					resetTimeout: 30000,
 					method: 'GET',
 					attemptsDone: 3,
 					body: 'err'
@@ -177,7 +180,7 @@ describe.only('GET multifetch sync', function () {
 				statusCode: 500,
 				headers: {
 					'content-type': 'application/json; charset=utf-8',
-					'content-length': '150'
+					'content-length': '215'
 				}
 			});
 		});
