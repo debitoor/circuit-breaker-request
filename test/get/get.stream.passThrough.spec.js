@@ -6,8 +6,10 @@ var responses = [];
 var cbr = require('../..');
 
 describe('circuit-breaker-request GET stream with passThrough:true', function () {
+	var msg;
 	before(function () {
 
+		msg = JSON.stringify({err: true});
 
 		app.disable('x-powered-by');
 		app.get('/test', function (req, res, next) {
@@ -42,7 +44,7 @@ describe('circuit-breaker-request GET stream with passThrough:true', function ()
 			res.json(e);
 		});
 
-		var server = app.listen(4300, function () {
+		var server = app.listen(4330, function () {
 			var host = server.address().address;
 			var port = server.address().port;
 			console.log('Example app listening at http://%s:%s', host, port);
@@ -56,16 +58,23 @@ describe('circuit-breaker-request GET stream with passThrough:true', function ()
 		result = {};
 		var stream;
 		stream = cbr.get({
-			url: 'http://localhost:4300/test',
-			timeout: 500,
-			logFunction: console.warn
+			url: 'http://localhost:4330/test',
+			timeout: 3000,
+			logFunction: console.warn,
+			passThrough: true
 		});
 		stream.on('response', function (resp) {
 			result.statusCode = resp.statusCode;
 			result.headers = resp.headers;
 		});
 		var concatStream = concat(function (body) {
-			result.body = JSON.parse(body.toString());
+			//console.error(body.toString());
+			try {
+				result.body = JSON.parse(body.toString());
+			} catch (ex) {
+				result.body = ex;
+				result.bodyString = body.toString();
+			}
 		});
 		pump(stream, concatStream, function (err) {
 			if (err) {
@@ -76,6 +85,17 @@ describe('circuit-breaker-request GET stream with passThrough:true', function ()
 		return {req: stream, dest: concatStream};
 	}
 
+	describe('returning success', function () {
+		before(done => get([{statusCode: 200, msg: '"success"'}], done));
+
+		it('calls with success', ()=> {
+			expect(result).to.containSubset({
+				body: 'success',
+				statusCode: 200,
+				headers: {'content-type': 'application/json'}
+			});
+		});
+	});
 
 	describe('returning 503 and then success', function () {
 		before(done => get([{statusCode: 503, msg: 'err'}, {statusCode: 200, msg: '"success"'}], done));
@@ -99,62 +119,41 @@ describe('circuit-breaker-request GET stream with passThrough:true', function ()
 	describe('returning 503, 503 and 503', function () {
 		before(done => get([{statusCode: 503, msg: 'err'}, {statusCode: 503, msg: 'err'}, {
 			statusCode: 503,
-			msg: 'err'
+			msg
 		}], done));
 
-		it('calls with err', ()=> {
+		it('should pass error through', ()=> {
 			expect(result).to.containSubset({
-				err: {
-					attemptsDone: 3,
-					body: 'err',
-					method: 'GET',
-					statusCode: 503,
-					url: 'http://localhost:4300/test'
-				}
-			});
-		});
-	});
-
-	describe('returning success', function () {
-		before(done => get([{statusCode: 200, msg: '"success"'}], done));
-
-		it('calls with success', ()=> {
-			expect(result).to.containSubset({
-				body: 'success',
-				statusCode: 200,
-				headers: {'content-type': 'application/json'}
+				body: {
+					err: true
+				},
+				statusCode: 503
 			});
 		});
 	});
 
 	describe('returning 400', function () {
-		before(done => get([{statusCode: 400, msg: 'err'}], done));
+		before(done => get([{statusCode: 400, msg}], done));
 
-		it('calls with err', ()=> {
+		it('should pass error through', ()=> {
 			expect(result).to.containSubset({
-				err: {
-					attemptsDone: 1,
-					body: 'err',
-					method: 'GET',
-					statusCode: 400,
-					url: 'http://localhost:4300/test'
-				}
+				body: {
+					err: true
+				},
+				statusCode: 400
 			});
 		});
 	});
 
 	describe('returning 503 then 400', function () {
-		before(done => get([{statusCode: 503, msg: 'err'}, {statusCode: 400, msg: 'err'}], done));
+		before(done => get([{statusCode: 503, msg: 'err'}, {statusCode: 400, msg}], done));
 
-		it('calls with err', ()=> {
+		it('streams 400 through', ()=> {
 			expect(result).to.containSubset({
-				err: {
-					attemptsDone: 2,
-					body: 'err',
-					method: 'GET',
-					statusCode: 400,
-					url: 'http://localhost:4300/test'
-				}
+				body: {
+					err: true
+				},
+				statusCode: 400
 			});
 		});
 	});
@@ -167,21 +166,18 @@ describe('circuit-breaker-request GET stream with passThrough:true', function ()
 		});
 	});
 
-	describe('pipefilter', function () {
-		var req, dest;
-		before(done => {
-			req = get([{statusCode: 200, msg: '"success"'}]);
-			req.req.pipefilter = function (r, d) {
-				dest = d;
-				done();
-			};
-		});
+	
+	describe('returning 400 6 times', function () {
+		for (var i = 0; i < 6; i++) {
+			before(done => get([{statusCode: 400, msg:'"err"'}], done));
+		}
 
-		it('calls pipefilter with correct dest', ()=> {
-			expect(dest).to.eql(req.dest);
-		});
-		it('calls with success', ()=> {
-			expect(result).to.containSubset({body: 'success', 'statusCode': 200});
+		it('streams 400 through', ()=> {
+			expect(result).to.containSubset({
+				body: 'err',
+				statusCode: 400
+			});
 		});
 	});
+
 });

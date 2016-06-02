@@ -34,7 +34,7 @@ describe('GET multifetch sync', function () {
 				url: 'http://localhost:4302/test',
 				attempts: 3, //default
 				delay: 500, //default
-				timeout: 2000,
+				timeout: 3000,
 				json: true,
 				logFunction: console.warn // optional, if you want to be notified about retry
 			});
@@ -168,10 +168,10 @@ describe('GET multifetch sync', function () {
 					url: 'http://localhost:4302/test',
 					attempts: 3,
 					delay: 500,
-					timeout: 666,
+					timeout: 1000,
 					json: true,
 					maxFailures: 5,
-					circuitBreakerTimeout: 2000,
+					circuitBreakerTimeout: 3000,
 					resetTimeout: 30000,
 					method: 'GET',
 					attemptsDone: 3,
@@ -180,7 +180,7 @@ describe('GET multifetch sync', function () {
 				statusCode: 500,
 				headers: {
 					'content-type': 'application/json; charset=utf-8',
-					'content-length': '215'
+					'content-length': '216'
 				}
 			});
 		});

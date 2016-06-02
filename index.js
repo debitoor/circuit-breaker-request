@@ -32,18 +32,6 @@ function cbr() {
 	rrsParams.timeout = params.requestTimeout;
 	delete rrsParams.requestTimeout;
 	rrsParams.circuitBreakerTimeout = params.timeout;
-
-	if (typeof rrsParams.callback === 'function') {
-		var originalCallback = rrsParams.callback;
-		rrsParams.callback = function (err) {
-			if (err && err.code === 1000) {
-				Object.assign(err, rrsParams);
-				err.message = 'Circuit breaker is closed, will open once errors stop happening';
-			}
-			originalCallback.apply(this, arguments);
-		};
-	}
-
 	return groups[groupId].run(rrsParams, rrsParams.callback);
 }
 

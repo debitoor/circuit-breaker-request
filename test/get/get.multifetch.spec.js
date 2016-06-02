@@ -8,7 +8,7 @@ var app = express();
 var responses = [];
 var cbr = require('../..');
 
-describe('GET multifetch', function () {
+describe('GET multifetch basic', function () {
 	before(function () {
 		app.disable('x-powered-by');
 		app.set('etag', false);
@@ -44,7 +44,7 @@ describe('GET multifetch', function () {
 				url: 'http://localhost:4301/test',
 				attempts: 3, //default
 				delay: 500, //default
-				timeout: 2000,
+				timeout: 5000,
 				json: true,
 				logFunction: console.warn // optional, if you want to be notified about retry
 			});
@@ -181,10 +181,10 @@ describe('GET multifetch', function () {
 					url: 'http://localhost:4301/test',
 					attempts: 3,
 					delay: 500,
-					timeout: 666,
+					timeout: 1666,
 					json: true,
 					maxFailures: 5,
-					circuitBreakerTimeout: 2000,
+					circuitBreakerTimeout: 5000,
 					resetTimeout: 30000,
 					method: 'GET',
 					attemptsDone: 3,
@@ -193,7 +193,7 @@ describe('GET multifetch', function () {
 				statusCode: 500,
 				headers: {
 					'content-type': 'application/json; charset=utf-8',
-					'content-length': '215'
+					'content-length': '216'
 				}
 			});
 		});

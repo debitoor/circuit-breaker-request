@@ -163,8 +163,22 @@ describe('circuit-breaker-request DELETE callbacks', function () {
 		this.timeout(15000);
 		before(done => del('success', [{timeout: true}, {timeout: true}, {timeout: true}, {statusCode: 200}], done));
 
-		it('calls with command timeout from curcuit-breaker', ()=> {
-			expect(result).to.contain.deep.property('err.message', 'Command timeout.');
+		it('calls with command timeout from circuit breaker', ()=> {
+			expect(result).to.have.property('err').to.containSubset({
+				message: 'Circuit breaker timed out',
+				code: 1100,
+				args: [{
+					timeout: 666,
+					maxFailures: 5,
+					resetTimeout: 30000,
+					attempts: 3,
+					url: 'http://localhost:4320/test',
+					json: true,
+					body: 'success',
+					method: 'DELETE',
+					circuitBreakerTimeout: 2000
+				}]
+			});
 		});
 	});
 
@@ -175,19 +189,20 @@ describe('circuit-breaker-request DELETE callbacks', function () {
 
 		it('calls with err that circuit breaker is closed', ()=> {
 			expect(result).to.have.property('err').to.containSubset({
-				message: 'Circuit breaker is closed, will open once errors stop happening',
+				message: 'Circuit breaker forced failure. It will stop forcing failures once calls start succeeding',
 				code: 1000,
-				attempts: 3,
-				circuitBreakerTimeout: 2000,
-				url: 'http://localhost:4320/test',
-				json: true,
-				resetTimeout: 30000,
-				timeout: 666,
-				maxFailures: 5,
-				method: 'DELETE',
-				body: 'err'
+				args: [{
+					attempts: 3,
+					circuitBreakerTimeout: 2000,
+					url: 'http://localhost:4320/test',
+					json: true,
+					resetTimeout: 30000,
+					timeout: 666,
+					maxFailures: 5,
+					method: 'DELETE',
+					body: 'err'
+				}]
 			});
 		});
 	});
-
 });
