@@ -1,11 +1,11 @@
 var request = require('request');
 var rrs = require('request-retry-stream');
 var levee = require('levee');
-
 var getGroupId = require('./getGroupId');
+
 var cnf;
 try {
-	cnf = require('cnf').circuitBreakerRequest;
+	cnf = require('cnf').circuitBreakerRequest || {};
 } catch (ex) {
 	cnf = {};
 }
@@ -13,7 +13,7 @@ try {
 module.exports = defaults(cnf);
 module.exports.defaults = defaults;
 
-var circuitBreakerGroups = {};
+var groups = {};
 
 function cbr() {
 	var params = request.initParams.apply(request, arguments);
@@ -26,14 +26,13 @@ function cbr() {
 	}, params);
 	params.requestTimeout = params.requestTimeout || Math.floor(params.timeout / params.attempts);
 	var groupId = params.getGroupId(params.url || params.uri);
-	var circuitBreaker = circuitBreakerGroups[groupId];
-	if (!circuitBreaker) {
-		circuitBreaker = circuitBreakerGroups[groupId] = levee.createBreaker(rrs, params);
-	}
+	groups[groupId] = groups[groupId] || levee.createBreaker(rrs, params);
+
 	var rrsParams = Object.assign({}, params);
 	rrsParams.timeout = params.requestTimeout;
 	delete rrsParams.requestTimeout;
 	rrsParams.circuitBreakerTimeout = params.timeout;
+
 	if (typeof rrsParams.callback === 'function') {
 		var originalCallback = rrsParams.callback;
 		rrsParams.callback = function (err) {
@@ -44,7 +43,8 @@ function cbr() {
 			originalCallback.apply(this, arguments);
 		};
 	}
-	return circuitBreaker.run(rrsParams, rrsParams.callback);
+
+	return groups[groupId].run(rrsParams, rrsParams.callback);
 }
 
 function defaults(defaultOpts) {
