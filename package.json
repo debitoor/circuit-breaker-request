@@ -1,0 +1,47 @@
+{
+  "name": "cuircuit-breaker-request",
+  "version": "1.0.0",
+  "description": "“circuit-breaker-request”",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/debitoor/cuircuit-breaker-request.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/debitoor/cuircuit-breaker-request/issues"
+  },
+  "homepage": "https://github.com/debitoor/cuircuit-breaker-request",
+  "devDependencies": {
+    "babel-eslint": "^6.0.4",
+    "chai": "^3.5.0",
+    "chai-subset": "^1.2.2",
+    "concat-stream": "^1.5.1",
+    "express": "^4.13.4",
+    "jscs": "3.0.3",
+    "mocha": "^2.5.3",
+    "mocha-eslint": "^2.0.2",
+    "mocha-jscs": "^5.0.0",
+    "multifetch": "^1.1.1",
+    "pump": "^1.0.1"
+  },
+  "dependencies": {
+    "cnf": "^3.0.1",
+    "levee": "^1.2.0",
+    "request-retry-stream": "^1.5.0"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "keywords": [
+    "circuit",
+    "breaker",
+    "request",
+    "retry",
+    "stream"
+  ],
+  "author": "Debitoor"
+}
