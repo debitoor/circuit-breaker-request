@@ -5,7 +5,7 @@ var app = express();
 var responses = [];
 var cbr = require('../..');
 
-describe('circuit-breaker-request GET basics', function () {
+describe('circuit-breaker-request GET stream', function () {
 	var msg;
 	before(function () {
 
@@ -165,4 +165,28 @@ describe('circuit-breaker-request GET basics', function () {
 			expect(result).to.containSubset({body: 'success', 'statusCode': 200});
 		});
 	});
+
+	/*
+	describe.only('returning 400 6 times', function () {
+		for (var i = 0; i < 6; i++) {
+			before(done => get([{statusCode: 400, msg:'"err"'}], done));
+		}
+
+		it('calls with err that circuit breaker is closed', ()=> {
+			expect(result).to.have.property('err').to.containSubset({
+				message: 'Circuit breaker is closed, will open once errors stop happening',
+				code: 1000,
+				attempts: 3,
+				circuitBreakerTimeout: 2000,
+				url: 'http://localhost:4320/test',
+				json: true,
+				resetTimeout: 30000,
+				timeout: 666,
+				maxFailures: 5,
+				method: 'DELETE',
+				body: 'err'
+			});
+		});
+	});
+*/
 });

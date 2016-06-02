@@ -6,10 +6,10 @@ var responses = [];
 var cbr = require('../..');
 
 describe('circuit-breaker-request DELETE callbacks', function () {
-	
+
 	before(function () {
 		app.disable('x-powered-by');
-		app.del('/test', function (req, res, next) {
+		app.delete('/test', function (req, res, next) {
 			if (!responses.length) {
 				throw new Error('no responses specified for test');
 			}
@@ -167,4 +167,27 @@ describe('circuit-breaker-request DELETE callbacks', function () {
 			expect(result).to.contain.deep.property('err.message', 'Command timeout.');
 		});
 	});
+
+	describe('returning 400 6 times', function () {
+		for (var i = 0; i < 6; i++) {
+			before(done => del('err', [{statusCode: 400}], done));
+		}
+
+		it('calls with err that circuit breaker is closed', ()=> {
+			expect(result).to.have.property('err').to.containSubset({
+				message: 'Circuit breaker is closed, will open once errors stop happening',
+				code: 1000,
+				attempts: 3,
+				circuitBreakerTimeout: 2000,
+				url: 'http://localhost:4320/test',
+				json: true,
+				resetTimeout: 30000,
+				timeout: 666,
+				maxFailures: 5,
+				method: 'DELETE',
+				body: 'err'
+			});
+		});
+	});
+
 });

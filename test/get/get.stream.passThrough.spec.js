@@ -5,7 +5,7 @@ var app = express();
 var responses = [];
 var cbr = require('../..');
 
-describe('circuit-breaker-request GET basics with passThrough:true', function () {
+describe('circuit-breaker-request GET stream with passThrough:true', function () {
 	before(function () {
 
 

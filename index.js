@@ -20,17 +20,27 @@ function cbr() {
 	params.maxFailures = params.maxFailures || 5;
 	params.resetTimeout = params.resetTimeout || 30000;
 	params.attempts = params.attempts || 3;
-	params.requestTimeout = params.requestTimeout || Math.floor(params.timeout/params.attempts);
+	params.requestTimeout = params.requestTimeout || Math.floor(params.timeout / params.attempts);
 	params.getGroupId = params.getGroupId || getGroupId;
 	var groupId = params.getGroupId(params.url || params.uri);
 	var circuitBreaker = circuitBreakerGroups[groupId];
-	if(!circuitBreaker){
+	if (!circuitBreaker) {
 		circuitBreaker = circuitBreakerGroups[groupId] = levee.createBreaker(rrs, params);
 	}
 	var rrsParams = Object.assign({}, params);
 	rrsParams.timeout = params.requestTimeout;
 	delete rrsParams.requestTimeout;
 	rrsParams.circuitBreakerTimeout = params.timeout;
+	if (typeof rrsParams.callback === 'function') {
+		var originalCallback = rrsParams.callback;
+		rrsParams.callback = function (err) {
+			if (err && err.code === 1000) {
+				Object.assign(err, rrsParams);
+				err.message = 'Circuit breaker is closed, will open once errors stop happening';
+			}
+			originalCallback.apply(this, arguments);
+		};
+	}
 	return circuitBreaker.run(rrsParams, rrsParams.callback);
 }
 
