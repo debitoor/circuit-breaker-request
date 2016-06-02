@@ -15,19 +15,19 @@ A wrapper around [request-retry-stream](https://github.com/debitoor/request-retr
 
 ```javascript
 
-//NOTE, all options are OPTIONAL, defaults displayed will be used for anything you don't specify
+//NOTE, all options are OPTIONAL, defaults displayed in parenthesis will be used for anything you don't specify
 
 var cbr = require('circuit-breaker-request').defaults({
-	timeout: 25000, //total timeout for request including any time spend on retries (default: 25000)
-	maxFailures: 5, //Max consecutive errors, before closing circuit breaker (default: 5)
-	resetTimeout: 30000, //Amount of time circuit breaker will be closed on consecutive errors (default: 30000)
+	timeout: 25000, //total timeout for request including any time spend on retries (25000)
+	maxFailures: 5, //Max consecutive errors, before closing circuit breaker (5)
+	resetTimeout: 30000, //Amount of time circuit breaker will be closed on consecutive errors (30000)
 	getGroupId: function getGroupId(url) {
     	var u = urlParser.parse(url);
         return u.protocol + u.host;
     }, //A function that returns the circuit-breaker group to use, given an URL. (default displayed)
-	requestTimeout: 8333, //Timeout for each individual http request, (default: Math.floor(timeout/attempts))
-	attempts: 3, //Number of attempts at HTTP request, retrying recoverable errors (default: 3)
-	delay: 500 //Delay between HTTP request retries, will back off to 500, 1000, 1500 (default: 500)
+	requestTimeout: 8333, //Timeout for each individual http request, (Math.floor(timeout/attempts))
+	attempts: 3, //Number of attempts at HTTP request, retrying recoverable errors (3)
+	delay: 500 //Delay between HTTP request retries, will back off to 500, 1000, 1500 (500)
 });
 
 cbr.get({url: 'https://google.com'}, function(err, resp){
