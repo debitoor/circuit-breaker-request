@@ -15,7 +15,8 @@ A wrapper around [request-retry-stream](https://github.com/debitoor/request-retr
 
 ```javascript
 
-//NOTE, all options are OPTIONAL, defaults displayed in parenthesis will be used for anything you don't specify
+//NOTE, all options are OPTIONAL.
+//Defaults, displayed in parenthesis, will be used for anything you don't specify
 
 var cbr = require('circuit-breaker-request').defaults({
 	timeout: 25000, //total timeout for request including any time spend on retries (25000)
