@@ -11,17 +11,20 @@ try {
 }
 
 module.exports = defaults(cnf);
+module.exports.defaults = defaults;
 
 var circuitBreakerGroups = {};
 
 function cbr() {
 	var params = request.initParams.apply(request, arguments);
-	params.timeout = params.timeout || 25000;
-	params.maxFailures = params.maxFailures || 5;
-	params.resetTimeout = params.resetTimeout || 30000;
-	params.attempts = params.attempts || 3;
+	params = Object.assign({
+		timeout: 25000,
+		maxFailures: 5,
+		resetTimeout: 30000,
+		attempts: 3,
+		getGroupId
+	}, params);
 	params.requestTimeout = params.requestTimeout || Math.floor(params.timeout / params.attempts);
-	params.getGroupId = params.getGroupId || getGroupId;
 	var groupId = params.getGroupId(params.url || params.uri);
 	var circuitBreaker = circuitBreakerGroups[groupId];
 	if (!circuitBreaker) {
@@ -44,8 +47,6 @@ function cbr() {
 	return circuitBreaker.run(rrsParams, rrsParams.callback);
 }
 
-module.exports.defaults = defaults;
-
 function defaults(defaultOpts) {
 	var d = fn();
 	d.get = fn('get');
@@ -62,7 +63,7 @@ function defaults(defaultOpts) {
 			if (verb) {
 				params.method = verb === 'del' ? 'DELETE' : verb.toUpperCase();
 			}
-			return cbr(Object.assign(Object.assign({}, defaultOpts), params), verb);
+			return cbr(Object.assign({}, defaultOpts, params), verb);
 		};
 	}
 }
