@@ -11,8 +11,30 @@ A wrapper around [request-retry-stream](https://github.com/debitoor/request-retr
 
 	npm install circuit-breaker-request
 
-## Usage
+## Usage - Basic with callbacks
 
+```js
+
+var cbr = require('circuit-breaker-request');
+
+cbr.get('https://google.com', function(err, resp){
+	// handle err and resp. Any response that does not have http status code 2XX is an error here
+});
+```
+
+## Usage - Simple stream in express middleware with pump (piping streams)
+
+```js
+var cbr = require('circuit-breaker-request');
+var pump = require('pump');
+
+function(req, res, next){
+    pump(cbr.get('http://google.com', {timeout: 5000}), res, next);
+}
+```
+
+
+## Usage - Options and defaults
 ```javascript
 
 // NOTE: all options are OPTIONAL.
@@ -41,6 +63,10 @@ cbr.get({url: 'https://debitoor.com'}, function(err, resp){
 
 // ... more HTTP requests with cbr
 
+//cbr request with special options, can also be used when defaults are not used.
+cbr.get({timeout: 10000, requestTimeout: 10000, attempts: 5, url: 'https://debitoor.com'}, function(err, resp){
+	// handle err and resp. Any response that does not have http status code 2XX is an error here
+});
 ```
 
 ## Grouping
