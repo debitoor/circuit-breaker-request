@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "cnf": "^3.0.1",
-    "levee": "git+ssh://git@github.com:debitoor/levee.git#ff9fb05b54099df919de75386782803f5b95057a",
+    "levee": "git+ssh://git@github.com/debitoor/levee.git#ff9fb05b54099df919de75386782803f5b95057a",
     "request-retry-stream": "^1.6.0"
   },
   "directories": {
