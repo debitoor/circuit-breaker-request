@@ -1,5 +1,5 @@
 {
-  "name": "cuircuit-breaker-request",
+  "name": "circuit-breaker-request",
   "version": "1.0.0",
   "description": "“circuit-breaker-request”",
   "main": "index.js",
@@ -8,13 +8,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/debitoor/cuircuit-breaker-request.git"
+    "url": "git+https://github.com/debitoor/circuit-breaker-request.git"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/debitoor/cuircuit-breaker-request/issues"
+    "url": "https://github.com/debitoor/circuit-breaker-request/issues"
   },
-  "homepage": "https://github.com/debitoor/cuircuit-breaker-request",
+  "homepage": "https://github.com/debitoor/circuit-breaker-request",
   "devDependencies": {
     "babel-eslint": "^6.0.4",
     "chai": "^3.5.0",
