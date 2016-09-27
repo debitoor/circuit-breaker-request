@@ -76,12 +76,12 @@ Here is an example of this grouping:
 
 ### Group 1
 	https://debitoor.com/test
-	https://debitorr.com
+	https://debitoor.com
 	https://debitoor.com/test?a=true
 
 ### Group 2
 	https://developers.debitoor.com/api
-	https://developers.debitorr.com
+	https://developers.debitoor.com
 	https://developers.debitoor.com/api?b=false
 
 ### Group 3
